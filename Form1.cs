@@ -574,35 +574,97 @@ namespace StudyTrack
 
         private Form CreateProfileForm()
         {
+            int totalTasks = _tasks.Count;
+            int completedTasks = _tasks.FindAll(t => t.IsCompleted).Count;
+            int remainingTasks = totalTasks - completedTasks;
+            int progressPercent = totalTasks == 0 ? 0 : (int)Math.Round((double)completedTasks * 100 / totalTasks);
+
             Form form = new Form
             {
                 Text = "Профиль",
-                Size = new Size(700, 420),
-                MinimumSize = new Size(560, 360),
+                Size = new Size(760, 520),
+                MinimumSize = new Size(620, 460),
                 StartPosition = FormStartPosition.CenterScreen,
                 BackColor = ColorTranslator.FromHtml("#1E1E2E"),
                 ForeColor = Color.FromArgb(245, 224, 220),
-                Font = new Font("Segoe UI", 12F)
+                Font = new Font("Segoe UI", 11F)
             };
 
-            form.Controls.Add(new Label
+            Label title = new Label
             {
-                Text = "Отдельная форма профиля открывается через нижнюю навигацию.",
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.TopCenter,
-                ForeColor = Color.FromArgb(186, 194, 222)
-            });
-
-            form.Controls.Add(new Label
-            {
-                Text = "Экран профиля",
+                Text = "Профиль ученика",
                 Dock = DockStyle.Top,
-                Height = 80,
+                Height = 74,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font("Segoe UI", 20F, FontStyle.Bold)
-            });
+                Font = new Font("Segoe UI", 22F, FontStyle.Bold)
+            };
 
+            TableLayoutPanel content = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 6,
+                Padding = new Padding(26, 10, 26, 20)
+            };
+            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
+            content.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            content.Controls.Add(CreateProfileMetricLabel("Имя экзамена: " + _exam.Name), 0, 0);
+            content.Controls.Add(CreateProfileMetricLabel("Всего тем: " + totalTasks), 0, 1);
+            content.Controls.Add(CreateProfileMetricLabel("Выполнено тем: " + completedTasks), 0, 2);
+            content.Controls.Add(CreateProfileMetricLabel("Осталось тем: " + remainingTasks), 0, 3);
+
+            CustomProgressBar profileProgress = new CustomProgressBar
+            {
+                Dock = DockStyle.Top,
+                Height = 30,
+                Maximum = 100,
+                Value = Math.Max(0, Math.Min(progressPercent, 100)),
+                ProgressColor = _accent,
+                TrackColor = Color.FromArgb(49, 50, 68),
+                CornerRadius = 12,
+                Margin = new Padding(0, 12, 0, 0)
+            };
+
+            Label progressText = new Label
+            {
+                Text = "Общий прогресс: " + progressPercent + "%",
+                Dock = DockStyle.Top,
+                Height = 30,
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = _textSecondary,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            Panel progressPanel = new Panel { Dock = DockStyle.Fill };
+            progressPanel.Controls.Add(profileProgress);
+            progressPanel.Controls.Add(progressText);
+            content.Controls.Add(progressPanel, 0, 4);
+
+            Button closeButton = CreateActionButton("Назад", Color.FromArgb(69, 71, 90), Color.FromArgb(205, 214, 244));
+            closeButton.Anchor = AnchorStyles.Left | AnchorStyles.Top;
+            closeButton.Click += (s, e) => form.Close();
+            content.Controls.Add(closeButton, 0, 5);
+
+            form.Controls.Add(content);
+            form.Controls.Add(title);
             return form;
+        }
+
+        private Label CreateProfileMetricLabel(string text)
+        {
+            return new Label
+            {
+                Text = text,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 13F),
+                ForeColor = _textPrimary,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
         }
 
         private void ReloadTasksAndProgress()
