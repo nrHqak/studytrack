@@ -442,15 +442,25 @@ namespace StudyTrack
                     MessageBox.Show("Вы уже на главном экране.", "Навигация", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
                 case "add":
-                    AddTaskDialog();
+                    OpenChildForm(new AddTaskForm());
                     break;
                 case "profile":
-                    MessageBox.Show("Профиль: ученик 11 класса.", "Профиль", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    OpenChildForm(new ProfileForm());
                     break;
                 default:
                     MessageBox.Show("Неизвестный раздел.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Открывает отдельную форму и скрывает текущую, пока дочерняя не закрыта.
+        /// </summary>
+        private void OpenChildForm(Form child)
+        {
+            child.FormClosed += (s, e) => Show();
+            child.Show();
+            Hide();
         }
 
         /// <summary>
