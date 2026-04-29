@@ -442,15 +442,235 @@ namespace StudyTrack
                     MessageBox.Show("Вы уже на главном экране.", "Навигация", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
                 case "add":
-                    OpenChildForm(new AddTaskForm());
+                    OpenChildForm(CreateAddTaskForm());
                     break;
                 case "profile":
-                    OpenChildForm(new ProfileForm());
+                    OpenChildForm(CreateProfileForm());
                     break;
                 default:
                     MessageBox.Show("Неизвестный раздел.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
             }
+        }
+
+
+
+        private Form CreateAddTaskForm()
+        {
+            Form form = new Form
+            {
+                Text = "Добавить задачу",
+                Size = new Size(720, 460),
+                MinimumSize = new Size(620, 430),
+                StartPosition = FormStartPosition.CenterScreen,
+                BackColor = ColorTranslator.FromHtml("#1E1E2E"),
+                ForeColor = Color.FromArgb(245, 224, 220),
+                Font = new Font("Segoe UI", 11F)
+            };
+
+            TextBox subjectTextBox = new TextBox { Dock = DockStyle.Fill };
+            TextBox titleTextBox = new TextBox { Dock = DockStyle.Fill };
+            CheckBox completedCheckBox = new CheckBox { Text = "Уже выполнено", AutoSize = true, ForeColor = form.ForeColor };
+
+            TableLayoutPanel formGrid = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(24, 8, 24, 16),
+                ColumnCount = 2,
+                RowCount = 4
+            };
+            formGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
+            formGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            formGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+            formGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+            formGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            formGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            formGrid.Controls.Add(CreateFieldLabel("Предмет:"), 0, 0);
+            formGrid.Controls.Add(subjectTextBox, 1, 0);
+            formGrid.Controls.Add(CreateFieldLabel("Тема задачи:"), 0, 1);
+            formGrid.Controls.Add(titleTextBox, 1, 1);
+            formGrid.Controls.Add(new Label(), 0, 2);
+            formGrid.Controls.Add(completedCheckBox, 1, 2);
+
+            FlowLayoutPanel buttons = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(0, 12, 0, 0) };
+            Button saveButton = CreateActionButton("Сохранить", _accent, _bgMain);
+            Button cancelButton = CreateActionButton("Отмена", Color.FromArgb(69, 71, 90), Color.FromArgb(205, 214, 244));
+
+            saveButton.Click += (sender, e) =>
+            {
+                string subject = subjectTextBox.Text.Trim();
+                string title = titleTextBox.Text.Trim();
+
+                if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(title))
+                {
+                    MessageBox.Show("Заполните предмет и тему задачи.", "Проверка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                bool duplicateExists = _tasks.Exists(t =>
+                    t.Subject.Equals(subject, StringComparison.OrdinalIgnoreCase)
+                    && t.Title.Equals(title, StringComparison.OrdinalIgnoreCase));
+
+                if (duplicateExists)
+                {
+                    MessageBox.Show("Такая задача уже существует.", "Дубликат", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                _tasks.Add(new StudyTask(title, completedCheckBox.Checked, subject));
+                _fileManager.SaveTasks(_tasks);
+                ReloadTasksAndProgress();
+                MessageBox.Show("Задача успешно добавлена.", "Готово", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                form.Close();
+            };
+
+            cancelButton.Click += (sender, e) => form.Close();
+            buttons.Controls.Add(saveButton);
+            buttons.Controls.Add(cancelButton);
+            formGrid.Controls.Add(buttons, 1, 3);
+
+            Label titleLabel = new Label
+            {
+                Text = "Добавление новой задачи",
+                Dock = DockStyle.Top,
+                Height = 70,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 20F, FontStyle.Bold)
+            };
+
+            form.Controls.Add(formGrid);
+            form.Controls.Add(titleLabel);
+            return form;
+        }
+
+        private Label CreateFieldLabel(string text)
+        {
+            return new Label
+            {
+                Text = text,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold)
+            };
+        }
+
+        private Button CreateActionButton(string text, Color backColor, Color foreColor)
+        {
+            Button button = new Button
+            {
+                Text = text,
+                Width = 130,
+                Height = 38,
+                BackColor = backColor,
+                ForeColor = foreColor,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Margin = new Padding(0, 0, 10, 0)
+            };
+            button.FlatAppearance.BorderSize = 0;
+            return button;
+        }
+
+        private Form CreateProfileForm()
+        {
+            int totalTasks = _tasks.Count;
+            int completedTasks = _tasks.FindAll(t => t.IsCompleted).Count;
+            int remainingTasks = totalTasks - completedTasks;
+            int progressPercent = totalTasks == 0 ? 0 : (int)Math.Round((double)completedTasks * 100 / totalTasks);
+
+            Form form = new Form
+            {
+                Text = "Профиль",
+                Size = new Size(760, 520),
+                MinimumSize = new Size(620, 460),
+                StartPosition = FormStartPosition.CenterScreen,
+                BackColor = ColorTranslator.FromHtml("#1E1E2E"),
+                ForeColor = Color.FromArgb(245, 224, 220),
+                Font = new Font("Segoe UI", 11F)
+            };
+
+            Label title = new Label
+            {
+                Text = "Профиль ученика",
+                Dock = DockStyle.Top,
+                Height = 74,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 22F, FontStyle.Bold)
+            };
+
+            TableLayoutPanel content = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 6,
+                Padding = new Padding(26, 10, 26, 20)
+            };
+            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+            content.RowStyles.Add(new RowStyle(SizeType.Absolute, 82));
+            content.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            content.Controls.Add(CreateProfileMetricLabel("Имя экзамена: " + _exam.Name), 0, 0);
+            content.Controls.Add(CreateProfileMetricLabel("Всего тем: " + totalTasks), 0, 1);
+            content.Controls.Add(CreateProfileMetricLabel("Выполнено тем: " + completedTasks), 0, 2);
+            content.Controls.Add(CreateProfileMetricLabel("Осталось тем: " + remainingTasks), 0, 3);
+
+            CustomProgressBar profileProgress = new CustomProgressBar
+            {
+                Dock = DockStyle.Top,
+                Height = 30,
+                Maximum = 100,
+                Value = Math.Max(0, Math.Min(progressPercent, 100)),
+                ProgressColor = _accent,
+                TrackColor = Color.FromArgb(49, 50, 68),
+                CornerRadius = 12,
+                Margin = new Padding(0, 12, 0, 0)
+            };
+
+            Label progressText = new Label
+            {
+                Text = "Общий прогресс: " + progressPercent + "%",
+                Dock = DockStyle.Top,
+                Height = 30,
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                ForeColor = _textSecondary,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            Panel progressPanel = new Panel { Dock = DockStyle.Fill };
+            progressPanel.Controls.Add(profileProgress);
+            progressPanel.Controls.Add(progressText);
+            content.Controls.Add(progressPanel, 0, 4);
+
+            Button closeButton = CreateActionButton("Назад", Color.FromArgb(69, 71, 90), Color.FromArgb(205, 214, 244));
+            closeButton.Anchor = AnchorStyles.Left | AnchorStyles.Top;
+            closeButton.Click += (s, e) => form.Close();
+            content.Controls.Add(closeButton, 0, 5);
+
+            form.Controls.Add(content);
+            form.Controls.Add(title);
+            return form;
+        }
+
+        private Label CreateProfileMetricLabel(string text)
+        {
+            return new Label
+            {
+                Text = text,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 13F),
+                ForeColor = _textPrimary,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+        }
+
+        private void ReloadTasksAndProgress()
+        {
+            _tasks = _fileManager.LoadTasks();
+            UpdateProgressBlock();
         }
 
         /// <summary>
