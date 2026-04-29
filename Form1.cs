@@ -177,6 +177,7 @@ namespace StudyTrack
         {
             Panel host = new Panel
             {
+                Dock = DockStyle.Fill,
                 Margin = new Padding(10),
                 BackColor = Color.Transparent,
                 Padding = new Padding(0, 8, 8, 0)
@@ -395,6 +396,7 @@ namespace StudyTrack
                 Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
+                AutoScroll = true,
                 Padding = new Padding(0)
             };
             card.Controls.Add(navButtons);
@@ -440,15 +442,25 @@ namespace StudyTrack
                     MessageBox.Show("Вы уже на главном экране.", "Навигация", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
                 case "add":
-                    AddTaskDialog();
+                    OpenChildForm(new AddTaskForm());
                     break;
                 case "profile":
-                    MessageBox.Show("Профиль: ученик 11 класса.", "Профиль", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    OpenChildForm(new ProfileForm());
                     break;
                 default:
                     MessageBox.Show("Неизвестный раздел.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Открывает отдельную форму и скрывает текущую, пока дочерняя не закрыта.
+        /// </summary>
+        private void OpenChildForm(Form child)
+        {
+            child.FormClosed += (s, e) => Show();
+            child.Show();
+            Hide();
         }
 
         /// <summary>
