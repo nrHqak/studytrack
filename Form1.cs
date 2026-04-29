@@ -442,10 +442,10 @@ namespace StudyTrack
                     MessageBox.Show("Вы уже на главном экране.", "Навигация", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     break;
                 case "add":
-                    OpenChildForm(new AddTaskForm(_fileManager, ReloadTasksAndProgress));
+                    OpenChildForm(CreateAddTaskForm());
                     break;
                 case "profile":
-                    OpenChildForm(new ProfileForm());
+                    OpenChildForm(CreateProfileForm());
                     break;
                 default:
                     MessageBox.Show("Неизвестный раздел.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -453,6 +453,157 @@ namespace StudyTrack
             }
         }
 
+
+
+        private Form CreateAddTaskForm()
+        {
+            Form form = new Form
+            {
+                Text = "Добавить задачу",
+                Size = new Size(720, 460),
+                MinimumSize = new Size(620, 430),
+                StartPosition = FormStartPosition.CenterScreen,
+                BackColor = ColorTranslator.FromHtml("#1E1E2E"),
+                ForeColor = Color.FromArgb(245, 224, 220),
+                Font = new Font("Segoe UI", 11F)
+            };
+
+            TextBox subjectTextBox = new TextBox { Dock = DockStyle.Fill };
+            TextBox titleTextBox = new TextBox { Dock = DockStyle.Fill };
+            CheckBox completedCheckBox = new CheckBox { Text = "Уже выполнено", AutoSize = true, ForeColor = form.ForeColor };
+
+            TableLayoutPanel formGrid = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(24, 8, 24, 16),
+                ColumnCount = 2,
+                RowCount = 4
+            };
+            formGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160));
+            formGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            formGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+            formGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+            formGrid.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            formGrid.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            formGrid.Controls.Add(CreateFieldLabel("Предмет:"), 0, 0);
+            formGrid.Controls.Add(subjectTextBox, 1, 0);
+            formGrid.Controls.Add(CreateFieldLabel("Тема задачи:"), 0, 1);
+            formGrid.Controls.Add(titleTextBox, 1, 1);
+            formGrid.Controls.Add(new Label(), 0, 2);
+            formGrid.Controls.Add(completedCheckBox, 1, 2);
+
+            FlowLayoutPanel buttons = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(0, 12, 0, 0) };
+            Button saveButton = CreateActionButton("Сохранить", _accent, _bgMain);
+            Button cancelButton = CreateActionButton("Отмена", Color.FromArgb(69, 71, 90), Color.FromArgb(205, 214, 244));
+
+            saveButton.Click += (sender, e) =>
+            {
+                string subject = subjectTextBox.Text.Trim();
+                string title = titleTextBox.Text.Trim();
+
+                if (string.IsNullOrWhiteSpace(subject) || string.IsNullOrWhiteSpace(title))
+                {
+                    MessageBox.Show("Заполните предмет и тему задачи.", "Проверка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                bool duplicateExists = _tasks.Exists(t =>
+                    t.Subject.Equals(subject, StringComparison.OrdinalIgnoreCase)
+                    && t.Title.Equals(title, StringComparison.OrdinalIgnoreCase));
+
+                if (duplicateExists)
+                {
+                    MessageBox.Show("Такая задача уже существует.", "Дубликат", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                _tasks.Add(new StudyTask(title, completedCheckBox.Checked, subject));
+                _fileManager.SaveTasks(_tasks);
+                ReloadTasksAndProgress();
+                MessageBox.Show("Задача успешно добавлена.", "Готово", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                form.Close();
+            };
+
+            cancelButton.Click += (sender, e) => form.Close();
+            buttons.Controls.Add(saveButton);
+            buttons.Controls.Add(cancelButton);
+            formGrid.Controls.Add(buttons, 1, 3);
+
+            Label titleLabel = new Label
+            {
+                Text = "Добавление новой задачи",
+                Dock = DockStyle.Top,
+                Height = 70,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 20F, FontStyle.Bold)
+            };
+
+            form.Controls.Add(formGrid);
+            form.Controls.Add(titleLabel);
+            return form;
+        }
+
+        private Label CreateFieldLabel(string text)
+        {
+            return new Label
+            {
+                Text = text,
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Font = new Font("Segoe UI", 11F, FontStyle.Bold)
+            };
+        }
+
+        private Button CreateActionButton(string text, Color backColor, Color foreColor)
+        {
+            Button button = new Button
+            {
+                Text = text,
+                Width = 130,
+                Height = 38,
+                BackColor = backColor,
+                ForeColor = foreColor,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Margin = new Padding(0, 0, 10, 0)
+            };
+            button.FlatAppearance.BorderSize = 0;
+            return button;
+        }
+
+        private Form CreateProfileForm()
+        {
+            Form form = new Form
+            {
+                Text = "Профиль",
+                Size = new Size(700, 420),
+                MinimumSize = new Size(560, 360),
+                StartPosition = FormStartPosition.CenterScreen,
+                BackColor = ColorTranslator.FromHtml("#1E1E2E"),
+                ForeColor = Color.FromArgb(245, 224, 220),
+                Font = new Font("Segoe UI", 12F)
+            };
+
+            form.Controls.Add(new Label
+            {
+                Text = "Отдельная форма профиля открывается через нижнюю навигацию.",
+                Dock = DockStyle.Fill,
+                TextAlign = ContentAlignment.TopCenter,
+                ForeColor = Color.FromArgb(186, 194, 222)
+            });
+
+            form.Controls.Add(new Label
+            {
+                Text = "Экран профиля",
+                Dock = DockStyle.Top,
+                Height = 80,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 20F, FontStyle.Bold)
+            });
+
+            return form;
+        }
 
         private void ReloadTasksAndProgress()
         {
