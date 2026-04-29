@@ -177,6 +177,7 @@ namespace StudyTrack
         {
             Panel host = new Panel
             {
+                Dock = DockStyle.Fill,
                 Margin = new Padding(10),
                 BackColor = Color.Transparent,
                 Padding = new Padding(0, 8, 8, 0)
@@ -395,6 +396,7 @@ namespace StudyTrack
                 Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top,
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = false,
+                AutoScroll = true,
                 Padding = new Padding(0)
             };
             card.Controls.Add(navButtons);
